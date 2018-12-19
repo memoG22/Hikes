@@ -5,6 +5,16 @@
     <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="theme-color" content="#000000">
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCUaQ1kZ14Pxb0rYNKBVspzxURR-DrEbuI&callback=initMap">
+    </script>
+      <style>
+          /* Set the size of the div element that contains the map */
+         .map {
+           height: 400px;  /* The height is 400 pixels */
+           width: 100%;  /* The width is the width of the web page */
+          }
+       </style>
     <!--
       manifest.json provides metadata used when your web app is added to the
       homescreen on Android. See https://developers.google.com/web/fundamentals/web-app-manifest/
@@ -32,9 +42,10 @@
   background-image: url(
     https://images.pexels.com/photos/1469880/pexels-photo-1469880.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500)"
   >
-    <noscript>
-      You need to enable JavaScript to run this app.
-    </noscript>
+  
+    <!-- <script>
+
+    </script> -->
     <div id="root"></div>
     <!--
       This HTML file is a template.

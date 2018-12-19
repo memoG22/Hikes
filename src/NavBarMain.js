@@ -6,6 +6,8 @@ import SignUp from "./Components/SignUp";
 import Careers from "./Components/Careers";
 import SearchTrails from "./Components/SearchTrails";
 import Contact from "./Components/Contact";
+import MapExample from "./Components/MapExample";
+
 import Grid from "react-css-grid";
 
 import {
@@ -41,14 +43,16 @@ class NavBarMain extends Component {
   render() {
     return (
       <React.Fragment>
-        <div>
-          <Nav
-            style={{
-              backgroundColor: "black"
-            }}
-          >
-            <Grid width={100}>
-              <div>
+        <div className="row">
+          <div className="col md-12">
+            <Nav
+              style={{
+                position: "sticky",
+                backgroundColor: "black",
+                height: "10vh"
+              }}
+            >
+              <div className="col md-3">
                 <NavItem>
                   <Dropdown isOpen={this.state.toggle} toggle={this.toggle}>
                     <DropdownToggle caret />
@@ -64,53 +68,60 @@ class NavBarMain extends Component {
                   </Dropdown>
                 </NavItem>
               </div>
-              <div>
+              <div className="col md-3">
                 <NavItem>
                   <NavLink
-                    style={{
-                      marginRight: "400px",
-                      color: "white"
-                    }}
+                    style={
+                      {
+                        // marginRight: "400px",
+                        // color: "white"
+                      }
+                    }
                     to="/search/trails"
                   >
-                    <h4 style={{ marginLeft: "100%" }}>Search for Trails</h4>
+                    <h4 style={{}}>Search for Trails</h4>
                   </NavLink>
                 </NavItem>
               </div>
-              <div>
+              <div className="col md-3">
                 <NavItem>
                   <NavLink
-                    style={{
-                      marginRight: "500px",
-                      color: "white"
-                    }}
+                    style={
+                      {
+                        // marginRight: "500px",
+                        // color: "white"
+                      }
+                    }
                     to="/careers"
                   >
-                    <h4 style={{ marginLeft: "100%" }}>Careers</h4>
+                    <h4 style={{}}>Careers</h4>
                   </NavLink>
                 </NavItem>
               </div>
-              <div>
+
+              <div className="col md-3">
                 <NavItem>
                   <NavLink
-                    style={{
-                      marginRight: "500px",
-                      color: "white"
-                    }}
+                    style={
+                      {
+                        // marginRight: "500px",
+                        // color: "white"
+                      }
+                    }
                     to="/contact"
                   >
-                    <h4 style={{ marginLeft: "100%" }}>Contact Us</h4>
+                    <h4 style={{}}>Contact Us</h4>
                   </NavLink>
                 </NavItem>
               </div>
-            </Grid>
-          </Nav>
-          <div>
-            <Route exact path="/home" component={Home} />
-            <Route exact path="/signup" component={SignUp} />
-            <Route exact path="/search/trails" component={SearchTrails} />
-            <Route exact path="/careers" component={Careers} />
-            <Route exact path="/contact" component={Contact} />
+            </Nav>
+            <div>
+              <Route exact path="/home" component={MapExample} />
+              <Route exact path="/signup" component={SignUp} />
+              <Route exact path="/search/trails" component={SearchTrails} />
+              <Route exact path="/careers" component={Careers} />
+              <Route exact path="/contact" component={Contact} />
+            </div>
           </div>
         </div>
       </React.Fragment>

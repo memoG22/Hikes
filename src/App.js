@@ -25,7 +25,7 @@ class App extends Component {
   render() {
     return (
       <React.Fragment>
-        <div>
+        <div style={{ width: "100%", position: "fixed" }}>
           <NavBarMain />
         </div>
       </React.Fragment>
