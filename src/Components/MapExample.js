@@ -1,138 +1,165 @@
 import React from "react";
-import { Row, Col, Container, Card, Button, CardBody } from "reactstrap";
+import { Button, Col, Modal, Row } from "reactstrap";
+import PropTypes from "prop-types";
+import "./Geo.css";
+
+// Takes the props: name, street, city, state as STRINGS.  Takes the prop zip as a NUMBER.
 
 const google = window.google;
 
-class GeoMessaging extends React.Component {
+class GeoRouteToAddress extends React.Component {
   state = {
-    street: "",
-    city: "",
-    st8: "",
-    zip: "",
-    street2: "",
-    city2: "",
-    st82: "",
-    zip2: "",
-    name: "",
-    lat: 33.9,
-    lng: -118.2437,
-    lat2: 35.0001,
-    lng2: -120.0001,
-    distanceFromOne: "",
-    zoom: 10,
-    locations: [],
-    distance: 0,
+    backdrop: true,
     map: "",
-    radius: 1,
-    markers: [],
-    locationOneCoords: "",
-    positionOne: "",
-    latLast: "",
-    lngLast: "",
-    lines: []
+    modal: true,
+    directionsService: "",
+    directionsDisplay: "",
+    userPosition: "",
+    travelMode: "DRIVING",
+    positionDestination: "",
+    zoom: 15,
+    showDirections: false,
+    markers: []
   };
 
   containerRef = React.createRef();
+  directionsPanelRef = React.createRef();
 
-  componentDidMount = () => {
-    this.loadMap();
+  mountDiv = div => {
+    if (div) {
+      this.loadMap();
+    }
+  };
+
+  reloadMap = () => {
+    const map = new google.maps.Map(this.containerRef.current);
+    this.setState({ map }, () => {
+      this.calculateEndPoint();
+    });
   };
 
   loadMap = () => {
-    const { lat, lng } = this.state;
-    let myLatlng = { lat, lng };
-    const myMap = {
-      center: myLatlng,
-      zoom: this.state.zoom
-    };
-    const map = new google.maps.Map(this.containerRef.current, myMap); // create map instance and place the map in containerRef
-    map.addListener("click", event => {
-      this.setState({ locationOneCoords: event.latLng }, () => {
-        this.addMarker(event.latLng);
-      });
+    const { name, street, city, state, zip } = this.props;
+    let streetAddress = `${street}, ${city}, ${state}, ${zip}`;
+    const label = name;
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: streetAddress }, (results, status) => {
+      if (status === "OK") {
+        const positionDestination = results[0].geometry.location;
+        this.setState({ positionDestination }, () => {
+          const myMap = {
+            center: this.state.positionDestination,
+            zoom: this.state.zoom
+          };
+          const map = new google.maps.Map(this.containerRef.current, myMap);
+          this.setState({ map }, () => {
+            this.addMarker(positionDestination, label);
+          });
+        });
+
+        return;
+      }
     });
-    this.setState({ map });
   };
 
-  addMarker = location => {
+  addMarker = (location, label) => {
     let marker = new google.maps.Marker({
       position: location,
       map: this.state.map,
-      animation: google.maps.Animation.DROP
+      title: label
     });
-    const latLast = location.lat().toFixed(6);
-    const lngLast = location.lng().toFixed(6);
-    this.setState({ latLast, lngLast });
     const markers = [...this.state.markers, marker];
-    this.setState({ markers }, () => {
-      this.calcDistance();
-    });
-
-    const line = new google.maps.Polyline({
-      path: [location, this.state.positionOne],
-      strokeColor: "#00F",
-      strokeWeight: 2,
-      strokeOpacity: 0.8,
-      map: this.state.map
-    });
-
-    let lines = this.state.lines;
-    lines = [...lines, line];
-    this.setState({ lines }, () => {});
+    this.setState({ markers });
   };
 
-  calcDistance = () => {
-    let coordsStart = this.state.positionOne;
-    let index = this.state.markers.length - 1;
-    let coordsEnd = this.state.markers[index].position;
-    let distanceFromOne = (
-      google.maps.geometry.spherical.computeDistanceBetween(
-        coordsStart,
-        coordsEnd
-      ) / 1000
-    ).toFixed(2);
-
-    this.setState({ distanceFromOne }, () => {
-      if (this.state.markers.length > 1) {
-        this.setBounds();
-      }
-    });
-  };
-
-  onDisplayLocationOne = () => {
-    const map = this.state.map;
-    const { street, city, zip } = this.state;
-    const state = this.state.st8;
-    let streetAddress = `${street}, ${city}, ${state},${zip}`;
-    const label1 = "Location One";
+  calculateEndPoint = () => {
     const geocoder = new google.maps.Geocoder();
-    this.geocodeAddress(map, geocoder, streetAddress, label1);
+    const { street, city, state, zip } = this.props;
+    let streetAddressEnd = `${street},${city},${state},${zip}`;
+    geocoder.geocode({ address: streetAddressEnd }, (results, status) => {
+      if (status === "OK") {
+        const positionDestination = results[0].geometry.location;
+        this.setState({ positionDestination }, () => {
+          this.findUserPosition();
+        });
+      } else {
+        console.log(status);
+      }
+    });
   };
 
-  // here, call geocode function on geocoder object created earlier.
-  geocodeAddress = (map, geocoder, streetAddress, label) => {
-    geocoder.geocode({ address: streetAddress }, (results, status) => {
-      if (status === "OK") {
-        map.setCenter(results[0].geometry.location); // re-set center of map to this new location
-        const positionOne = results[0].geometry.location;
-        this.setState({ positionOne }, () => {
-          // new google.maps.Marker({
-          //   // create and place a marker to the new location
-          //   map: map,
-          //   position: results[0].geometry.location,
-          //   title: label,
-          //   animation: google.maps.Animation.DROP
-          // });
-          this.addMarker(positionOne);
-        });
+  findUserPosition = () => {
+    navigator.geolocation.getCurrentPosition(position => {
+      const userPosition = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+      this.setState({ userPosition }, () => {
+        this.calculateAndDrawRoute();
+      });
+    });
+  };
 
-        return; // return to terminate
+  calculateAndDrawRoute = () => {
+    const map = this.state.map;
+    const userPosition = this.state.userPosition;
+    const positionDestination = this.state.positionDestination;
+    const directionsService = new google.maps.DirectionsService();
+    const directionsDisplay = new google.maps.DirectionsRenderer();
+    directionsService.route(
+      {
+        origin: userPosition,
+        destination: positionDestination,
+        travelMode: this.state.travelMode
+      },
+      function(response, status) {
+        if (status === "OK") {
+          directionsDisplay.setDirections(response);
+        } else {
+          window.alert("Directions request failed due to " + status);
+        }
       }
+    );
+    directionsDisplay.setMap(map);
+    this.setState({ map }, () => {
+      directionsDisplay.setPanel(this.directionsPanelRef.current);
+    });
+  };
+
+  onToggleRoute = () => {
+    const modal = this.state.modal;
+    this.setState({ modal: !modal });
+  };
+
+  onSelectTravelMode = travelMode => {
+    document.getElementById("directions-panel").innerHTML = "";
+    this.setState({ travelMode, map: [] }, () => {
+      this.reloadMap();
+    });
+  };
+
+  onCloseMainModal = () => {
+    this.setState({ travelMode: "DRIVING" }, () => {
+      this.onToggleRoute();
+    });
+  };
+
+  onShowDirections = () => {
+    this.setState({ showDirections: true }, () => {
+      this.findUserPosition();
+    });
+  };
+
+  onHideDirections = () => {
+    document.getElementById("directions-panel").innerHTML = "";
+    this.setState({ showDirections: false }, () => {
+      this.setState({ map: [], travelMode: "DRIVING" }, () => {
+        this.loadMap();
+      });
     });
   };
 
   onClearMap = () => {
-    // alert("Clearing " + numberMarkers + " objects and " + numberLines + " lines");
     let markers = this.state.markers;
     let lines = this.state.lines;
     for (let i = 0; i < markers.length; i++) {
@@ -146,206 +173,130 @@ class GeoMessaging extends React.Component {
     this.setState({ markers, lines });
   };
 
-  setBounds = () => {
-    let map = this.state.map;
-    const markersArray = this.state.markers;
-    const bounds = new google.maps.LatLngBounds();
-    for (let i = 0; i < markersArray.length; i++) {
-      bounds.extend(markersArray[i].getPosition());
-    }
-    map.fitBounds(bounds);
-    this.setState({ map });
-  };
-
-  onChangeStreet = e => {
-    const street = e.target.value;
-    this.setState({ street });
-  };
-
-  onChangeCity = e => {
-    const city = e.target.value;
-    this.setState({ city });
-  };
-
-  onChangeSt8 = e => {
-    const st8 = e.target.value;
-    this.setState({ st8 });
-  };
-
-  onChangeZip = e => {
-    const zip = e.target.value;
-    this.setState({ zip });
-  };
-
-  onChangeStreet2 = e => {
-    const street2 = e.target.value;
-    this.setState({ street2 });
-  };
-
-  onChangeCity2 = e => {
-    const city2 = e.target.value;
-    this.setState({ city2 });
-  };
-
-  onChangeSt82 = e => {
-    const st82 = e.target.value;
-    this.setState({ st82 });
-  };
-
-  onChangeZip2 = e => {
-    const zip2 = e.target.value;
-    this.setState({ zip2 });
-  };
-
-  onChangeName = e => {
-    const name = e.target.value;
-    this.setState({ name });
-  };
-
-  onChangeRadius = e => {
-    const radius = e.targe.value;
-    this.setState({ radius });
-  };
-
   render() {
     return (
       <>
-        <Container>
-          <Row>
-            <Col md="6">
-              <Card>
-                <div
-                  style={{ width: "100%", height: "59vh" }}
-                  ref={this.containerRef}
-                />
-                <CardBody />
-                <Button
-                  className="btn btn-primary mt-2"
-                  onClick={this.onClearMap}
-                >
-                  <i className="fa fa-times-circle mr-2 " />
-                  Clear Map
-                </Button>
-              </Card>
-            </Col>
+        <a href="#" onClick={this.onToggleRoute}>
+          <i className="ft ft-map-pin success " />{" "}
+        </a>
 
-            <Col md="5">
+        <Modal
+          isOpen={this.state.modal}
+          toggle={this.onToggleRoute}
+          backdrop={this.state.backdrop}
+          style={{ width: "1150px", maxWidth: "100vw" }}
+        >
+          <div className="root" ref={this.mountDiv}>
+            <div className="address">
               <Row>
+                {" "}
                 <Col>
-                  <Card>
-                    <CardBody>
-                      <Row>
-                        <Col>
-                          <h5> Location One </h5>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col>
-                          <label htmlFor="street">Street: </label>
-                        </Col>
-                        <Col>
-                          <input
-                            type="text"
-                            name="street"
-                            value={this.state.street}
-                            onChange={this.onChangeStreet}
-                          />
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col>
-                          <label htmlFor="city">City:</label>
-                        </Col>
-                        <Col>
-                          <input
-                            type="text"
-                            name="city"
-                            value={this.state.city}
-                            onChange={this.onChangeCity}
-                          />
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col>
-                          <label htmlFor="st8">State:</label>
-                        </Col>
-                        <Col>
-                          <input
-                            type="text"
-                            name="st8"
-                            value={this.state.st8}
-                            onChange={this.onChangeSt8}
-                          />
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col>
-                          <label htmlFor="zip">Zip:</label>
-                        </Col>
-                        <Col>
-                          <input
-                            type="number"
-                            name="zip"
-                            value={this.state.zip}
-                            onChange={this.onChangeZip}
-                          />
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col>
-                          <label htmlFor="radius">Radius</label>
-                        </Col>
-                        <Col>
-                          <input
-                            tpe="number"
-                            name="radius"
-                            value={this.state.radius}
-                            onChange={this.onChangeRadius}
-                          />
-                        </Col>
-                      </Row>{" "}
-                    </CardBody>
-
+                  {this.state.showDirections && <span> Directions to: </span>}{" "}
+                  {this.props.name}
+                  {" - "} {this.props.street}
+                  {", "}
+                  {this.props.city}
+                  {", "}
+                  {this.props.state}
+                  {"  "}
+                  {this.props.zip}
+                </Col>{" "}
+                {!this.state.showDirections && (
+                  <Col md="2">
                     <Button
-                      className="btn btn-success mt-2 mb-0"
-                      onClick={this.onDisplayLocationOne}
+                      outline
+                      color="primary"
+                      style={{ float: "right" }}
+                      onClick={this.onShowDirections}
                     >
-                      <i className="fa fa-search mr-2" />
-                      Display Location One
+                      Directions
                     </Button>
-                  </Card>
-                </Col>
+                  </Col>
+                )}
               </Row>
-              <Row>
-                <Col>
-                  <Card>
-                    <CardBody>
-                      <Row>
-                        <Col>
-                          <h5> Location Two </h5>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col md="8">Lattitude</Col>
-                        <Col>{this.state.latLast}</Col>
-                      </Row>
-                      <Row>
-                        <Col md="8">Longitute</Col>
-                        <Col>{this.state.lngLast}</Col>
-                      </Row>
-                      <Row>
-                        <Col md="8">Distance from Location One:</Col>
-                        <Col>{this.state.distanceFromOne}</Col>
-                      </Row>
-                    </CardBody>
-                  </Card>
-                </Col>
-              </Row>
-            </Col>
-          </Row>
-        </Container>
+            </div>
+
+            <div className="map" ref={this.containerRef} />
+            {this.state.showDirections && (
+              <>
+                <div className="transit-modes">
+                  <Button
+                    outline
+                    color="primary"
+                    name="DRIVING"
+                    value="DRIVING"
+                    onClick={() => this.onSelectTravelMode("DRIVING")}
+                    active={this.state.travelMode === "DRIVING"}
+                    style={{ width: "60px", marginLeft: "0px" }}
+                  >
+                    <i className="fa fa-car" />
+                  </Button>
+
+                  <Button
+                    outline
+                    color="primary"
+                    name="TRANSIT"
+                    value="TRANSIT"
+                    onClick={() => this.onSelectTravelMode("TRANSIT")}
+                    active={this.state.travelMode === "TRANSIT"}
+                    style={{ width: "60px", marginLeft: "7px" }}
+                  >
+                    <i className="fa fa-bus" />
+                  </Button>
+                  <Button
+                    outline
+                    color="primary"
+                    name="BICYCLING"
+                    value="BICYCLING"
+                    onClick={() => this.onSelectTravelMode("BICYCLING")}
+                    active={this.state.travelMode === "BICYCLING"}
+                    style={{ width: "60px", marginLeft: "7px" }}
+                  >
+                    <i className="fa fa-bicycle" />
+                  </Button>
+
+                  <Button
+                    outline
+                    color="primary"
+                    name="hideDirections"
+                    onClick={() => this.onHideDirections()}
+                    style={{ width: "60px", marginRight: "0", float: "right" }}
+                  >
+                    <i className="fa fa-times" />
+                  </Button>
+                </div>
+                <div
+                  className="directions"
+                  id="directions-panel"
+                  style={{ overflowY: "scroll" }}
+                  ref={this.directionsPanelRef}
+                />
+              </>
+            )}
+
+            <div className="close-modal-btn">
+              <Button
+                className="btn btn-primary   "
+                onClick={this.onCloseMainModal}
+                style={{ width: "100%", display: "block" }}
+              >
+                <i className="fa fa-times-circle mr-2" />
+                Close
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </>
     );
   }
 }
-export default GeoMessaging;
+
+GeoRouteToAddress.propTypes = {
+  name: PropTypes.string,
+  street: PropTypes.string,
+  city: PropTypes.string,
+  state: PropTypes.string,
+  zip: PropTypes.string
+};
+
+export default GeoRouteToAddress;

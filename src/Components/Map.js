@@ -1,7 +1,7 @@
 import React from "react";
 import "./trails.css";
-import { Container, Row, Col } from "react-grid-system";
 import { geolocated } from "react-geolocated";
+import axios from "axios";
 
 const google = window.google;
 
@@ -9,20 +9,21 @@ class Map extends React.Component {
   state = {
     pos: {},
     streetStart: "",
-    cityStart: "",
+    cityStart: "los angeles",
     zipStart: "",
     stateStart: "",
     locationStart: "",
     locationEnd: "",
     streetEnd: "",
-    cityEnd: "",
+    cityEnd: "pasadena",
     stateEnd: "",
     zipEnd: "",
     lat: "",
     lng: "",
     map: "",
     directionsService: "",
-    directionsDisplay: ""
+    directionsDisplay: "",
+    distanceFromOne: ""
   };
 
   containerRef = React.createRef();
@@ -68,6 +69,7 @@ class Map extends React.Component {
     const locationStart = await this.calculatePoint(streetAddressStart);
     const locationEnd = await this.calculatePoint(streetAddressEnd);
     this.calculateAndDrawRoute(locationStart, locationEnd);
+    this.getDistance();
   };
 
   calculatePoint = streetAddress => {
@@ -75,6 +77,8 @@ class Map extends React.Component {
       const geocoder = new google.maps.Geocoder();
       return new Promise((resolve, reject) => {
         geocoder.geocode({ address: streetAddress }, (results, status) => {
+          // console.log(results);
+
           if (status === "OK") {
             const geoLocal = results[0].geometry.location;
             resolve(geoLocal);
@@ -107,6 +111,38 @@ class Map extends React.Component {
     );
   };
 
+  getDistance = () => {
+    axios
+      .get(
+        "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=" +
+          this.state.cityStart +
+          "& destinations=" +
+          this.state.cityEnd +
+          "&key=AIzaSyCUaQ1kZ14Pxb0rYNKBVspzxURR-DrEbuI"
+      )
+      .then(response => {
+        console.log(response);
+      });
+  };
+
+  calcDistance = () => {
+    let coordsStart = this.state.positionOne;
+    let index = this.state.markers.length - 1;
+    let coordsEnd = this.state.markers[index].position;
+    let distanceFromOne = (
+      google.maps.geometry.spherical.computeDistanceBetween(
+        coordsStart,
+        coordsEnd
+      ) / 1000
+    ).toFixed(2);
+
+    this.setState({ distanceFromOne }, () => {
+      if (this.state.markers.length > 1) {
+        this.setBounds();
+      }
+    });
+  };
+
   onChange = e => {
     this.setState({
       [e.target.name]: e.target.value
@@ -116,49 +152,35 @@ class Map extends React.Component {
   render() {
     return (
       <React.Fragment>
-        <div
-          style={{
-            color: "white",
-            textAlign: "center"
-          }}
-        >
-          <h1>Search Trails</h1>
-        </div>
-        <Container>
-          <Col>
-            <div
-              style={{
-                color: "white",
-                marginLeft: "70%"
-              }}
-            >
-              <h2>Search trails near you</h2>
+        <div className="row">
+          <div className="col md-4" style={{ color: "white", maxWidth: "60%" }}>
+            <h2>Search trails near you</h2>
 
-              <input
-                style={{ marginTop: "5%" }}
-                type="text"
-                name="cityEnd"
-                placeholder="To"
-                onChange={this.onChange}
-              />
-              <input
-                type="text"
-                name="cityStart"
-                placeholder="From"
-                onChange={this.onChange}
-              />
-              <br />
-              <button type="button" onClick={this.onPlotRoute}>
-                {" "}
-                Search{" "}
-              </button>
-              <div
-                style={{ width: "170%", height: "60vh" }}
-                ref={this.containerRef}
-              />
-            </div>
-          </Col>
-        </Container>
+            <input
+              style={{ marginTop: "5%" }}
+              type="text"
+              name="cityEnd"
+              placeholder="To"
+              onChange={this.onChange}
+            />
+            <input
+              type="text"
+              name="cityStart"
+              placeholder="From"
+              onChange={this.onChange}
+            />
+            <br />
+            <button type="button" onClick={this.onPlotRoute}>
+              {" "}
+              Search{" "}
+            </button>
+            <div
+              className="col md-4"
+              style={{ height: "60vh" }}
+              ref={this.containerRef}
+            />
+          </div>
+        </div>
       </React.Fragment>
     );
   }

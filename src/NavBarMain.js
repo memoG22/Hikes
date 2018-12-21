@@ -79,7 +79,7 @@ class NavBarMain extends Component {
                     }
                     to="/search/trails"
                   >
-                    <h4 style={{}}>Search for Trails</h4>
+                    <h1 style={{ color: "white" }}>Search for Trails</h1>
                   </NavLink>
                 </NavItem>
               </div>
@@ -94,7 +94,7 @@ class NavBarMain extends Component {
                     }
                     to="/careers"
                   >
-                    <h4 style={{}}>Careers</h4>
+                    <h1 style={{ color: "white" }}>Careers</h1>
                   </NavLink>
                 </NavItem>
               </div>
@@ -110,13 +110,13 @@ class NavBarMain extends Component {
                     }
                     to="/contact"
                   >
-                    <h4 style={{}}>Contact Us</h4>
+                    <h1 style={{ color: "white" }}>Contact Us</h1>
                   </NavLink>
                 </NavItem>
               </div>
             </Nav>
             <div>
-              <Route exact path="/home" component={MapExample} />
+              <Route exact path="/home" component={Home} />
               <Route exact path="/signup" component={SignUp} />
               <Route exact path="/search/trails" component={SearchTrails} />
               <Route exact path="/careers" component={Careers} />

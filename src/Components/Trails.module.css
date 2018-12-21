@@ -1,0 +1,12 @@
+.background {
+    
+background-color:black;
+height:100vh;
+  background-size: 100%;
+  background-repeat:no-repeat; 
+  background-position: center;
+  background-attachment: fixed;
+  background-image: url(
+    https://images.pexels.com/photos/1469880/pexels-photo-1469880.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500)
+}
+
